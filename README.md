@@ -26,6 +26,7 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+
 ## Project setup
 
 ```bash
@@ -43,6 +44,22 @@ $ pnpm run start:dev
 
 # production mode
 $ pnpm run start:prod
+```
+
+## Migration
+
+```bash
+# Generate a new migration from entity changes
+npm run migration:generate InitialMigration
+
+# Create empty migration
+npm run migration:create CreateNewFeature
+
+# We run pending migrations
+npm run migration:run
+
+# Revert last migration
+npm run migration:revert
 ```
 
 ## Run tests
