@@ -16,7 +16,12 @@ async function bootstrap() {
   // app.useGlobalFilters(new HttpExceptionFilter());
   // app.useGlobalInterceptors(new TransformInterceptor());
 
-  app.enableCors();
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    methods: "GET, HEAD, PUT, POST, DELETE",
+    credentials: true
+  });
+  
   try {
     const dataSource = app.get(DataSource);
     if (dataSource.isInitialized) {
