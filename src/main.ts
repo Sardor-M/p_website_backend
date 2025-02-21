@@ -2,9 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DataSource } from 'typeorm';
 import { ValidationPipe } from '@nestjs/common';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import helmet from 'helmet';
+import * as compression from "compression";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(helmet());
+
+  app.use(compression());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -13,15 +21,15 @@ async function bootstrap() {
     }),
   );
 
-  // app.useGlobalFilters(new HttpExceptionFilter());
-  // app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new TransformInterceptor());
 
   app.enableCors({
     origin: 'http://localhost:5173',
-    methods: "GET, HEAD, PUT, POST, DELETE",
-    credentials: true
+    methods: 'GET, HEAD, PUT, POST, DELETE',
+    credentials: true,
   });
-  
+
   try {
     const dataSource = app.get(DataSource);
     if (dataSource.isInitialized) {
