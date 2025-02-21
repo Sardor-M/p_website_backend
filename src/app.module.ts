@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
-import databaseConfig from '@/config/db.config'
-import { DatabaseModule } from './database/database.module';
+import databaseConfig from './config/database/database.config';
+import { DatabaseModule } from './config/database/database.module';
+import { BlogService } from './modules/blog/services/blog.service';
+import { BlogController } from './modules/blog/controllers/blog.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { BlogPost } from './modules/blog/entities/blog-post.entity';
 
 @Module({
   imports: [
@@ -12,9 +14,9 @@ import { DatabaseModule } from './database/database.module';
       load: [databaseConfig],
     }),
     DatabaseModule,
-    // BlogModule,
+    TypeOrmModule.forFeature([BlogPost])
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [BlogController],
+  providers: [BlogService],
 })
 export class AppModule {}

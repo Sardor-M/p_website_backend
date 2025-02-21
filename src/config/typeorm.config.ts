@@ -1,4 +1,4 @@
-import { BlogPost } from "@/entities/blog-post.entity";
+import { BlogPost } from "@/modules/blog/entities/blog-post.entity";
 import { config } from "dotenv";
 import { DataSource } from "typeorm";
 
