@@ -25,7 +25,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
 
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: "https://portfolio-e80b2.web.app",
     methods: 'GET, HEAD, PUT, POST, DELETE',
     credentials: true,
   });
