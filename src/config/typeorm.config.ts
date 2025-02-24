@@ -20,9 +20,10 @@ export const dataSourceOptions: DataSourceOptions = {
     BlogPost,
     join(__dirname, '..', 'modules', '**', 'entities', '**', '*.{ts,js}')
   ],  
-  migrations: [join(__dirname, '..', 'migrations', '**', '*.{ts,js}')],
+  migrations: ['src/migrations/*.ts'],
   logging: true,
-  synchronize: false,
+  synchronize: process.env.NODE_ENV !== 'production',
+  ssl: false, 
 };
 
 export const dataSource = new DataSource(dataSourceOptions);
