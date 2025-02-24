@@ -13,6 +13,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [databaseConfig],
+      envFilePath: '.env',
     }),
     ThrottlerModule.forRoot([{
       ttl: 60000,
