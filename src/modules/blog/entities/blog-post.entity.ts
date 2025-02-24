@@ -8,7 +8,7 @@ import {
 
 @Entity('blog_posts')
 export class BlogPost {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn("uuid")
   id: number;
 
   @Column({ type: 'varchar', length: 255 })
@@ -27,7 +27,7 @@ export class BlogPost {
     bio: string;
   };
 
-  @Column({ type: 'varchar', length: 50 })
+  @Column({ type: 'varchar', length: 70 })
   readTime: string;
 
   @Column('text', { array: true })
@@ -42,9 +42,9 @@ export class BlogPost {
     content?: string;
   }>;
 
-  @CreateDateColumn()
+  @CreateDateColumn({type: 'timestamp'})
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({type: 'timestamp'})
   updatedAt: Date;
 }
