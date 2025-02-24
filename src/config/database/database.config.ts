@@ -25,7 +25,7 @@ export default registerAs('database', (): TypeOrmModuleOptions => {
     port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE || 'shaxsiy_blog_db',
+    database: process.env.DB_DATABASE || 'portfolio_db_work',
     entities: [BlogPost],
     synchronize: process.env.NODE_ENV !== 'production', // productionda careful bolish kerak
     logging: process.env.NODE_ENV === 'development',
