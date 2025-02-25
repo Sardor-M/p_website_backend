@@ -7,14 +7,52 @@ import { ValidationPipe } from '@nestjs/common';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import helmet from 'helmet';
-import * as compression from "compression";
+import * as compression from 'compression';
+import * as cookieParser from 'cookie-parser';
+import * as csurf from 'csurf';
+
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log']
+  });
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'", 'https://portfolio-e80b2.web.app'],
+          fontSrc: ["'self'", 'https:'],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"],
+        },
+      },
+      crossOriginEmbedderPolicy: { policy: 'require-corp' },
+      crossOriginOpenerPolicy: { policy: 'same-origin' },
+      crossOriginResourcePolicy: { policy: 'same-site' },
+      dnsPrefetchControl: { allow: false },
+      frameguard: { action: 'deny' },
+      hsts: { maxAge: 15552000, includeSubDomains: true },
+      ieNoOpen: true,
+      noSniff: true,
+      originAgentCluster: true,
+      permittedCrossDomainPolicies: { permittedPolicies: 'none' },
+      referrerPolicy: { policy: 'no-referrer' },
+      xssFilter: true,
+    }),
+  );
 
   app.use(compression());
+
+  app.use(cookieParser());
+
+  // csrf protection enabled
+  app.use(csurf({ cookie: true }));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -27,9 +65,18 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
 
   app.enableCors({
-    origin: "https://portfolio-e80b2.web.app",
+    origin: 'https://portfolio-e80b2.web.app',
     methods: 'GET, HEAD, PUT, POST, DELETE',
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    exposeHeaders: [
+      'X-RateLimit-Limit',
+      'X-RateLimit-Remaining',
+      'X-RateLimit-Reset',
+    ],
     credentials: true,
+    maxAge: 3600,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   try {
