@@ -51,7 +51,7 @@ export class AppModule implements NestModule {
       .forRoutes('*')
       .apply(RateLimitMiddleware)
       .forRoutes({
-        path: '/blog/:path*',
+        path: '/blog/*blogPath',
         method: RequestMethod.ALL
       });
   }
