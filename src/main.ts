@@ -11,10 +11,9 @@ import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 import * as csurf from 'csurf';
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log']
+    logger: ['error', 'warn', 'log'],
   });
 
   app.use(
@@ -67,7 +66,7 @@ async function bootstrap() {
   app.enableCors({
     origin: ['https://portfolio-e80b2.web.app', 'https://utteranc.es'],
     methods: 'GET, HEAD, PUT, POST, DELETE',
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
     exposeHeaders: [
       'X-RateLimit-Limit',
       'X-RateLimit-Remaining',
