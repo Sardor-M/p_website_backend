@@ -64,9 +64,19 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
 
   app.enableCors({
-    origin: ['https://portfolio-e80b2.web.app', 'https://utteranc.es'],
+    origin: [
+      'https://sardor-m.dev',
+      'https://www.sardor-m.dev',
+      'https://utteranc.es',
+    ],
     methods: 'GET, HEAD, PUT, POST, DELETE',
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
     exposeHeaders: [
       'X-RateLimit-Limit',
       'X-RateLimit-Remaining',
