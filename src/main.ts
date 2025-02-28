@@ -64,11 +64,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
 
   app.enableCors({
-    origin: [
-      'https://sardor-m.dev',
-      'https://www.sardor-m.dev',
-      'https://utteranc.es',
-    ],
+    origin: 'https://sardor-m.dev',
     methods: 'GET, HEAD, PUT, POST, DELETE',
     allowedHeaders: [
       'Content-Type',
