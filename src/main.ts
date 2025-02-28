@@ -72,8 +72,11 @@ async function bootstrap() {
       'Accept',
       'Origin',
       'X-Requested-With',
+      'X-CSRF-TOKEN',
+      'CSRF-Token',
     ],
     exposeHeaders: [
+      'Content-Range',
       'X-RateLimit-Limit',
       'X-RateLimit-Remaining',
       'X-RateLimit-Reset',
