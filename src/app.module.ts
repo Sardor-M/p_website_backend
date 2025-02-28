@@ -1,4 +1,9 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import databaseConfig from './config/database/database.config';
 import { DatabaseModule } from './config/database/database.module';
@@ -14,7 +19,6 @@ import { APP_GUARD } from '@nestjs/core';
 import { CsrfController } from './modules/blog/controllers/csrf.controller';
 import { CsrfMiddleware } from './common/middleware/csrf.middlware';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -22,12 +26,14 @@ import { CsrfMiddleware } from './common/middleware/csrf.middlware';
       load: [databaseConfig],
       envFilePath: '.env',
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     DatabaseModule,
-    TypeOrmModule.forFeature([BlogPost])
+    TypeOrmModule.forFeature([BlogPost]),
   ],
   controllers: [BlogController, CsrfController],
   providers: [
@@ -38,8 +44,6 @@ import { CsrfMiddleware } from './common/middleware/csrf.middlware';
     },
   ],
 })
-
-
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
@@ -48,11 +52,20 @@ export class AppModule implements NestModule {
       .apply(XssProtectionMiddleware)
       .forRoutes('*')
       .apply(CsrfMiddleware)
-      .forRoutes('*')
+      .exclude(
+        { path: '/blog', method: RequestMethod.GET },
+        { path: '/blog/*', method: RequestMethod.GET },
+      )
+      .forRoutes(
+        { path: '*', method: RequestMethod.POST },
+        { path: '*', method: RequestMethod.PUT },
+        { path: '*', method: RequestMethod.PATCH },
+        { path: '*', method: RequestMethod.DELETE },
+      )
       .apply(RateLimitMiddleware)
       .forRoutes({
         path: '/blog/*blogPath',
-        method: RequestMethod.ALL
+        method: RequestMethod.ALL,
       });
   }
 }
