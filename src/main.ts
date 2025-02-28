@@ -63,29 +63,29 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  app.enableCors({
-    origin: 'https://sardor-m.dev',
-    methods: 'GET, HEAD, PUT, POST, DELETE',
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'Accept',
-      'Origin',
-      'X-Requested-With',
-      'X-CSRF-TOKEN',
-      'CSRF-Token',
-    ],
-    exposeHeaders: [
-      'Content-Range',
-      'X-RateLimit-Limit',
-      'X-RateLimit-Remaining',
-      'X-RateLimit-Reset',
-    ],
-    credentials: true,
-    maxAge: 3600,
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-  });
+  // app.enableCors({
+  //   origin: 'https://sardor-m.dev',
+  //   methods: 'GET, HEAD, PUT, POST, DELETE',
+  //   allowedHeaders: [
+  //     'Content-Type',
+  //     'Authorization',
+  //     'Accept',
+  //     'Origin',
+  //     'X-Requested-With',
+  //     'X-CSRF-TOKEN',
+  //     'CSRF-Token',
+  //   ],
+  //   exposeHeaders: [
+  //     'Content-Range',
+  //     'X-RateLimit-Limit',
+  //     'X-RateLimit-Remaining',
+  //     'X-RateLimit-Reset',
+  //   ],
+  //   credentials: true,
+  //   maxAge: 3600,
+  //   preflightContinue: false,
+  //   optionsSuccessStatus: 204,
+  // });
 
   try {
     const dataSource = app.get(DataSource);
