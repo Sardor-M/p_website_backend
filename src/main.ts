@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import './crypto-patch';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { DataSource } from 'typeorm';
 import { ValidationPipe } from '@nestjs/common';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -10,6 +9,7 @@ import helmet from 'helmet';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 import * as csurf from 'csurf';
+import { FirebaseService } from './firebase/firebase.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -63,37 +63,14 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  // app.enableCors({
-  //   origin: 'https://sardor-m.dev',
-  //   methods: 'GET, HEAD, PUT, POST, DELETE',
-  //   allowedHeaders: [
-  //     'Content-Type',
-  //     'Authorization',
-  //     'Accept',
-  //     'Origin',
-  //     'X-Requested-With',
-  //     'X-CSRF-TOKEN',
-  //     'CSRF-Token',
-  //   ],
-  //   exposeHeaders: [
-  //     'Content-Range',
-  //     'X-RateLimit-Limit',
-  //     'X-RateLimit-Remaining',
-  //     'X-RateLimit-Reset',
-  //   ],
-  //   credentials: true,
-  //   maxAge: 3600,
-  //   preflightContinue: false,
-  //   optionsSuccessStatus: 204,
-  // });
-
   try {
-    const dataSource = app.get(DataSource);
-    if (dataSource.isInitialized) {
-      console.log('DB connected now/');
+    const firebaseService = app.get(FirebaseService);
+    const firestore = firebaseService.getFirestore();
+    if (firestore) {
+      console.log('Firebase Firestore connected successfully');
     }
   } catch (error) {
-    console.error('Database connection failed:', error);
+    console.error('Firebase connection failed:', error);
   }
 
   const port = process.env.PORT ?? 3000;
