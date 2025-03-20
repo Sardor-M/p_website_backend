@@ -20,6 +20,8 @@ export class FirebaseService implements OnModuleInit, OnModuleDestroy {
   private firestoreDb: Firestore;
   private readonly logger = new Logger(FirebaseService.name);
   private readonly isProduction: boolean;
+  private retryCount = 0;
+  private readonly MAX_RETRIES = 5;
 
   constructor(private configService: ConfigService) {
     this.isProduction = process.env.NODE_ENV === 'production';
@@ -28,12 +30,36 @@ export class FirebaseService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
-  onModuleInit() {
+ async onModuleInit() {
     try {
       // firebase initialize bolgani check qilamiz
       if (!admin.apps.length) {
         if (this.isProduction) {
-          this.initializeFirebaseForProduction();
+          if (this.retryCount >= this.MAX_RETRIES) {
+            this.logger.warn(
+              `Maximum retry attempts (${this.MAX_RETRIES}) reached. Using fallback mode.`,
+            );
+            this.initializeFirebaseForProduction();
+            return;
+          }
+          this.retryCount++;
+          this.logger.log(
+            `Firebase initialization attempt ${this.retryCount}/${this.MAX_RETRIES}`,
+          );
+
+          try {
+            await this.initializeFirebaseForProduction();
+          } catch (error) {
+            if (this.retryCount >= this.MAX_RETRIES) {
+              this.logger.warn(
+                'All Firebase connection attempts failed. Using fallback mode.',
+              );
+              this.initializeFallbackFirebase();
+              return;
+            } else {
+              throw error; 
+            }
+          }
         } else {
           this.initializeFirebaseForDevelopment();
         }
@@ -56,89 +82,73 @@ export class FirebaseService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private initializeFirebaseForProduction() {
-    this.logger.log('Initializing Firebase for prod env');
-    // env varlarni check qilib olamiz birinchi
-    const firebaseProjectId = this.configService.get('FIREBASE_PROJECT_ID');
-    const firebasePrivateKey = this.configService.get('FIREBASE_PRIVATE_KEY');
-    const firebaseClientEmail = this.configService.get('FIREBASE_CLIENT_EMAIL');
+  // fallback mode uchun
+  private initializeFallbackFirebase() {
+    this.logger.log('Initializing Firebase in fallback mode');
 
-    // check qilamiz based on base64 encoded service account
-    const firebaseServiceAccountBase64 = this.configService.get(
-      'FIREBASE_SERVICE_ACCOUNT',
+    this.firebaseApp = admin.initializeApp(
+      {
+        projectId: 'portfolio-e80b2',
+      },
+      'portfolio-app',
     );
 
-    if (firebaseProjectId && firebasePrivateKey && firebaseClientEmail) {
-      this.logger.log('Initializing Firebase with env variables');
+    this.firestoreDb = this.firebaseApp.firestore();
 
-      //private key escape qilishi mumkinligiga
-      const privateKey = firebasePrivateKey.replace(/\\n/g, '\n');
+    this.logger.log(
+      'Firebase initialized in fallback mode - limited functionality available',
+    );
+  }
 
-      this.firebaseApp = admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: firebaseProjectId,
-          privateKey: privateKey,
-          clientEmail: firebaseClientEmail,
-        }),
-        projectId: firebaseProjectId,
-      });
-
-      this.logger.log(
-        `Firebase initialized with project ID: ${firebaseProjectId}`,
-      );
-    } else if (firebaseServiceAccountBase64) {
-      // With base64 encoded service accountni initialize qilamiz
+  private initializeFirebaseForProduction() {
+    this.logger.log('Initializing Firebase for prod env');
+    
+    const firebaseServiceAccountJson = this.configService.get('FIREBASE_SERVICE_ACCOUNT');
+  
+    if (firebaseServiceAccountJson) {
       try {
-        this.logger.log(
-          'Initialized Firebase with base64 encoded service account',
-        );
-        const serviceAccountJson = Buffer.from(
-          firebaseServiceAccountBase64,
-          'base64',
-        ).toString('utf8');
-        const serviceAccount = JSON.parse(serviceAccountJson);
-
+        this.logger.log('Initializing Firebase with FIREBASE_SERVICE_ACCOUNT');
+        let serviceAccount;
+        
+        if (typeof firebaseServiceAccountJson === 'string') {
+          serviceAccount = JSON.parse(firebaseServiceAccountJson);
+        } else {
+          // if it is already object
+          serviceAccount = firebaseServiceAccountJson;
+        }
+        
         this.firebaseApp = admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
           projectId: serviceAccount.project_id,
         });
-
-        this.logger.log(
-          `Firebase initialized with project ID: ${serviceAccount.project_id}`,
-        );
+        
+        this.logger.log(`Firebase initialized with project ID: ${serviceAccount.project_id}`);
+        return;
       } catch (error) {
-        this.logger.error(
-          'Failed to parse base64 encoded service account',
-          error,
-        );
-        throw new Error('Invalid Firebase service account (base64)');
+        this.logger.error('Failed to parse FIREBASE_SERVICE_ACCOUNT', error);
+        throw new Error('Invalid Firebase service account configuration');
       }
+    }
+    
+    // fallback case
+    const prodServiceAccountPath =
+      process.env.FIREBASE_SERVICE_ACCOUNT ||
+      path.resolve(process.cwd(), 'firebase-service-account.json');
+  
+    if (fs.existsSync(prodServiceAccountPath)) {
+      const serviceAccount = require(prodServiceAccountPath);
+  
+      this.firebaseApp = admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        projectId: serviceAccount.project_id,
+      });
+  
+      this.logger.log(`Firebase initialized with project ID: ${serviceAccount.project_id}`);
     } else {
-      // fallback checking the firebase service account in the prod uhcun
-      const prodServiceAccountPath =
-        process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-        path.resolve(process.cwd(), 'firebase-service-account.json');
-
-      if (fs.existsSync(prodServiceAccountPath)) {
-        // this.logger.log(`Service account file found at: ${prodServiceAccountPath}`);
-        const serviceAccount = require(prodServiceAccountPath);
-
-        this.firebaseApp = admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-          projectId: serviceAccount.project_id,
-        });
-
-        this.logger.log(
-          `Firebase initialized with project ID: ${serviceAccount.project_id}`,
-        );
-      } else {
-        this.logger.error(
-          'No Firebase credentials found for production environment',
-        );
-        throw new Error(
-          'Firebase credentials not found. Please set FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL environment variables or provide a service account file',
-        );
-      }
+      this.logger.error('No Firebase credentials found for prod env');
+      throw new Error(
+        'Firebase credentials not found. Pls set FIREBASE_SERVICE_ACCOUNT env vars or provide a service account file'
+      );
     }
   }
 
