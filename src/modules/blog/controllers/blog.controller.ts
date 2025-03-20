@@ -15,12 +15,6 @@ import { BlogService } from '@/modules/blog/services/blog.service';
 
 import { CreateBlogDto } from '../dto/create-blog.dto'
 import { UpdateBlogDto } from '../dto/update-blog.dto';
-import { QueryBlogDto } from '../dto/query-blog.dto';
-
-// import { BlogService } from '../services/blog.service';
-// import { CreateBlogDto } from '../dto/create-blog.dto';
-// import { UpdateBlogDto } from '../dto/update-blog.dto';
-// import { QueryBlogDto } from '../dto/query-blog.dto';
 
 @Controller('blog')
 export class BlogController {
@@ -33,13 +27,13 @@ export class BlogController {
   }
 
   @Get()
-  findAll(@Query() query: QueryBlogDto) {
-    return this.blogService.findAll(query);
+  findAll() {
+    return this.blogService.findAll();
   }
 
   @Get('latest')
-  getLatest(@Query('limit', ParseIntPipe) limit: number = 5) {
-    return this.blogService.findLatest(limit);
+  getLatest(@Query('limit') limit: number = 5) {
+    return this.blogService.findAll();
   }
 
   @Get('topic/:topic')
@@ -48,13 +42,13 @@ export class BlogController {
   }
 
   @Put(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseIntPipe) id: string) {
     return this.blogService.findOne(id);
   }
 
   @Put(':id')
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: string,
     @Body() updaBlogDto: UpdateBlogDto,
   ) {
     return this.blogService.update(id, updaBlogDto);
@@ -62,7 +56,7 @@ export class BlogController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.blogService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: string) {
+    return this.blogService.delete(id);
   }
 }

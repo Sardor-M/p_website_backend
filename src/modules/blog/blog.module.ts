@@ -1,13 +1,13 @@
 import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { BlogPost } from "./entities/blog-post.entity";
 import { BlogController } from "./controllers/blog.controller";
 import { BlogService } from "./services/blog.service";
+import { BlogPostRepository } from "./repositories/blog-post.repository";
+import { FirebaseModule } from "@/firebase/firebase.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([BlogPost])],
+    imports: [FirebaseModule],
     controllers: [BlogController],
-    providers: [BlogService],
+    providers: [BlogService, BlogPostRepository],
     exports: [BlogService],
 })
 
