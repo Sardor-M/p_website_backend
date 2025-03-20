@@ -30,34 +30,37 @@ export class FirebaseService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
- async onModuleInit() {
+  async onModuleInit() {
     try {
       // firebase initialize bolgani check qilamiz
       if (!admin.apps.length) {
         if (this.isProduction) {
-          if (this.retryCount >= this.MAX_RETRIES) {
-            this.logger.warn(
-              `Maximum retry attempts (${this.MAX_RETRIES}) reached. Using fallback mode.`,
-            );
-            this.initializeFirebaseForProduction();
-            return;
-          }
           this.retryCount++;
           this.logger.log(
             `Firebase initialization attempt ${this.retryCount}/${this.MAX_RETRIES}`,
           );
 
-          try {
-            await this.initializeFirebaseForProduction();
-          } catch (error) {
-            if (this.retryCount >= this.MAX_RETRIES) {
-              this.logger.warn(
-                'All Firebase connection attempts failed. Using fallback mode.',
+          if (this.retryCount >= this.MAX_RETRIES) {
+            this.logger.warn(
+              `Maximum retry attempts (${this.MAX_RETRIES}) reached. Using fallback mode.`,
+            );
+            this.initializeFallbackFirebase();
+          } else {
+            try {
+              await this.initializeFirebaseForProduction();
+            } catch (error) {
+              this.logger.error(
+                'Firebase production initialization failed:',
+                error.message,
               );
-              this.initializeFallbackFirebase();
-              return;
-            } else {
-              throw error; 
+              if (this.retryCount >= this.MAX_RETRIES) {
+                this.logger.warn(
+                  'All Firebase connection attempts failed. Using fallback mode.',
+                );
+                this.initializeFallbackFirebase();
+              } else {
+                throw error;
+              }
             }
           }
         } else {
@@ -66,6 +69,14 @@ export class FirebaseService implements OnModuleInit, OnModuleDestroy {
       } else {
         this.firebaseApp = admin.app();
         this.logger.log('Using the Firebase app instance');
+      }
+
+      // we ensure we have a Firebase app before proceeding
+      if (!this.firebaseApp) {
+        this.logger.warn(
+          'No Firebase app initialized, using fallback as last resort',
+        );
+        this.initializeFallbackFirebase();
       }
 
       this.firestoreDb = this.firebaseApp.firestore();
@@ -78,7 +89,32 @@ export class FirebaseService implements OnModuleInit, OnModuleDestroy {
       this.logger.log('Firebase and Firestore initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize Firebase', error.stack);
-      throw error;
+
+      // safety check - always use  the fallback as last resort if we get here
+      if (!this.firestoreDb && this.firebaseApp) {
+        this.logger.warn(
+          'Firestore DB not initialized, attempting to initialize now',
+        );
+        this.firestoreDb = this.firebaseApp.firestore();
+        this.firestoreDb.settings({
+          ignoreUndefinedProperties: true,
+        });
+      } else if (!this.firestoreDb) {
+        this.logger.warn('No Firebase app initialized, using empty fallback');
+        this.initializeFallbackFirebase();
+        // we add null checks
+        if (this.firebaseApp) {
+          this.firestoreDb = this.firebaseApp.firestore();
+          this.firestoreDb.settings({
+            ignoreUndefinedProperties: true,
+          });
+        } else {
+          this.logger.error(
+            'Failed to initialize fallback Firebase in getFirestore',
+          );
+          this.firestoreDb = {} as Firestore;
+        }
+      }
     }
   }
 
@@ -102,52 +138,58 @@ export class FirebaseService implements OnModuleInit, OnModuleDestroy {
 
   private initializeFirebaseForProduction() {
     this.logger.log('Initializing Firebase for prod env');
-    
-    const firebaseServiceAccountJson = this.configService.get('FIREBASE_SERVICE_ACCOUNT');
-  
+
+    const firebaseServiceAccountJson = this.configService.get(
+      'FIREBASE_SERVICE_ACCOUNT',
+    );
+
     if (firebaseServiceAccountJson) {
       try {
         this.logger.log('Initializing Firebase with FIREBASE_SERVICE_ACCOUNT');
         let serviceAccount;
-        
+
         if (typeof firebaseServiceAccountJson === 'string') {
           serviceAccount = JSON.parse(firebaseServiceAccountJson);
         } else {
           // if it is already object
           serviceAccount = firebaseServiceAccountJson;
         }
-        
+
         this.firebaseApp = admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
           projectId: serviceAccount.project_id,
         });
-        
-        this.logger.log(`Firebase initialized with project ID: ${serviceAccount.project_id}`);
+
+        this.logger.log(
+          `Firebase initialized with project ID: ${serviceAccount.project_id}`,
+        );
         return;
       } catch (error) {
         this.logger.error('Failed to parse FIREBASE_SERVICE_ACCOUNT', error);
         throw new Error('Invalid Firebase service account configuration');
       }
     }
-    
+
     // fallback case
     const prodServiceAccountPath =
       process.env.FIREBASE_SERVICE_ACCOUNT ||
       path.resolve(process.cwd(), 'firebase-service-account.json');
-  
+
     if (fs.existsSync(prodServiceAccountPath)) {
       const serviceAccount = require(prodServiceAccountPath);
-  
+
       this.firebaseApp = admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
         projectId: serviceAccount.project_id,
       });
-  
-      this.logger.log(`Firebase initialized with project ID: ${serviceAccount.project_id}`);
+
+      this.logger.log(
+        `Firebase initialized with project ID: ${serviceAccount.project_id}`,
+      );
     } else {
       this.logger.error('No Firebase credentials found for prod env');
       throw new Error(
-        'Firebase credentials not found. Pls set FIREBASE_SERVICE_ACCOUNT env vars or provide a service account file'
+        'Firebase credentials not found. Pls set FIREBASE_SERVICE_ACCOUNT env vars or provide a service account file',
       );
     }
   }
@@ -226,11 +268,37 @@ export class FirebaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   getFirestore(): Firestore {
+    // Safety check - initialize fallback if no DB available
+    if (!this.firestoreDb && this.firebaseApp) {
+      this.logger.warn(
+        'Firestore DB not initialized, attempting to initialize now',
+      );
+      this.firestoreDb = this.firebaseApp.firestore();
+      this.firestoreDb.settings({
+        ignoreUndefinedProperties: true,
+      });
+    } else if (!this.firestoreDb) {
+      this.logger.warn('No Firebase app initialized, using empty fallback');
+      this.initializeFallbackFirebase();
+      this.firestoreDb = this.firebaseApp.firestore();
+      this.firestoreDb.settings({
+        ignoreUndefinedProperties: true,
+      });
+    }
+
     return this.firestoreDb;
   }
 
   // helper method to get the collection ref
   collection<T = DocumentData>(collectionName: string): CollectionReference<T> {
+    // safety check qilamiz  to ensure we have Firestore DB
+    if (!this.firestoreDb) {
+      this.logger.warn(
+        `Firestore DB not initialized when requesting collection ${collectionName}, initializing fallback`,
+      );
+      this.getFirestore();
+    }
+
     return this.firestoreDb.collection(
       collectionName,
     ) as CollectionReference<T>;
