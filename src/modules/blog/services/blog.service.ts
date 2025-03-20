@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { BlogPostRepository } from '../repositories/blog-post.repository';
-import { 
-} from '../dto/create-blog.dto';
 import { CreateBlogDto } from '../dto/create-blog.dto';
-import {Upda}
+import { BlogPost } from '@/types';
+import { UpdateBlogDto } from '../dto/update-blog.dto';
 
 @Injectable()
 export class BlogService {
@@ -15,11 +14,11 @@ export class BlogService {
 
   async findOne(id: string): Promise<BlogPost> {
     const blogPost = await this.blogPostRepository.findOne(id);
-    
+
     if (!blogPost) {
       throw new NotFoundException(`Blog post with ID "${id}" not found`);
     }
-    
+
     return blogPost;
   }
 
@@ -27,19 +26,25 @@ export class BlogService {
     return this.blogPostRepository.create(createBlogPostDto);
   }
 
-  async update(id: string, updateBlogPostDto: UpdateBlogDto): Promise<BlogPost> {
-    const blogPost = await this.blogPostRepository.update(id, updateBlogPostDto);
-    
+  async update(
+    id: string,
+    updateBlogPostDto: UpdateBlogDto,
+  ): Promise<BlogPost> {
+    const blogPost = await this.blogPostRepository.update(
+      id,
+      updateBlogPostDto,
+    );
+
     if (!blogPost) {
       throw new NotFoundException(`Blog post with ID "${id}" not found`);
     }
-    
+
     return blogPost;
   }
 
   async delete(id: string): Promise<void> {
     const deleted = await this.blogPostRepository.delete(id);
-    
+
     if (!deleted) {
       throw new NotFoundException(`Blog post with ID "${id}" not found`);
     }
@@ -49,7 +54,7 @@ export class BlogService {
     return this.blogPostRepository.findByTopic(topic);
   }
 
-  async findLatest(limit: number): Promise<BlogPost[]>{
+  async findLatest(limit: number): Promise<BlogPost[]> {
     return this.blogPostRepository.findLatest(limit);
   }
 }
