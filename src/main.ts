@@ -65,6 +65,7 @@ async function bootstrap() {
 
   try {
     const firebaseService = app.get(FirebaseService);
+    await new Promise(resolve => setTimeout(resolve, 500)); 
     const firestore = firebaseService.getFirestore();
     if (firestore) {
       console.log('Firebase Firestore connected successfully');

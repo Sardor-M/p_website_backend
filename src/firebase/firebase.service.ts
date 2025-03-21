@@ -42,6 +42,11 @@ export class FirebaseService implements OnModuleInit, OnModuleDestroy {
         const existingApp = admin.apps[0];
         if (!existingApp) throw new Error('No Firebase app found');
         this.firebaseApp = existingApp;
+
+        if (this.firebaseApp && !this.firestoreDb) {
+          this.firestoreDb = this.firebaseApp.firestore();
+          this.logger.log('Using existing Firestore from initialized app');
+        }
       } else {
         // we initialize based on the env
         if (this.isProduction) {
@@ -53,21 +58,34 @@ export class FirebaseService implements OnModuleInit, OnModuleDestroy {
 
       // initialize firestore      
       if (this.firebaseApp) {
-        this.firestoreDb = this.firebaseApp.firestore();
-        this.firestoreDb.settings({
-          ignoreUndefinedProperties: true,
-        });
-        this.logger.log('Firebase and Firestore initialized successfully');
+        if (!this.firestoreDb) {
+          this.firestoreDb = this.firebaseApp.firestore();
+          this.firestoreDb.settings({
+            ignoreUndefinedProperties: true,
+          });
+          this.logger.log('Firebase and Firestore initialized successfully');
+        } else {
+          this.logger.log('Firestore already initialized, skipping settings');
+        }
       } else {
         throw new Error('Firebase app initialization failed');
       }
     } catch (error) {
       this.logger.error(`Failed to initialize Firebase: ${error.message}`);
 
+      if (error.message.includes('Firestore has already been initialized')) {
+        this.logger.warn('Detected Firestore already initialized error - using existing instance');
+        // we just use the existing firestore instance if available
+        if (!this.firestoreDb && this.firebaseApp) {
+          this.firestoreDb = this.firebaseApp.firestore();
+          return; 
+        }
+      }
+
       // qaytadan urinib ko'ramiz
       if (this.retryCount < this.MAX_RETRIES) {
         this.retryCount++;
-        const delay = Math.pow(2, this.retryCount) * 1000; 
+        const delay = Math.pow(2, this.retryCount) * 500; 
 
         this.logger.log(`Retrying Firebase initialization (${this.retryCount}/${this.MAX_RETRIES}) in ${delay}ms`);
 
@@ -220,10 +238,13 @@ export class FirebaseService implements OnModuleInit, OnModuleDestroy {
         appName,
       );
 
-      this.firestoreDb = this.firebaseApp.firestore();
-      this.firestoreDb.settings({
-        ignoreUndefinedProperties: true,
-      });
+      // we check if firestore is already initialized or not
+      if (!this.firestoreDb) {
+        this.firestoreDb = this.firebaseApp.firestore();
+        this.firestoreDb.settings({
+          ignoreUndefinedProperties: true,
+        });
+      }
 
       this.logger.log(
         'Firebase initialized in fallback mode - limited functionality available',
@@ -276,5 +297,5 @@ export class FirebaseService implements OnModuleInit, OnModuleDestroy {
   // specific collection ref
   getBlogPostsCollection() {
     return this.collection('blog_posts');
-  }
+  } 
 }
