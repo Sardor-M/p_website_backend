@@ -63,6 +63,10 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
 
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  console.log(`Application is running on: http://localhost:${port}`);
+
   try {
     const firebaseService = app.get(FirebaseService);
     await new Promise(resolve => setTimeout(resolve, 500)); 
@@ -73,10 +77,6 @@ async function bootstrap() {
   } catch (error) {
     console.error('Firebase connection failed:', error);
   }
-
-  const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
 }
 
 bootstrap().catch((error) => {
