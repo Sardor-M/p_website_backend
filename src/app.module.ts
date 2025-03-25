@@ -15,6 +15,7 @@ import { CsrfController } from './modules/blog/controllers/csrf.controller';
 import { CsrfMiddleware } from './common/middleware/csrf.middlware';
 import { FirebaseModule } from './firebase/firebase.module';
 import { BlogModule } from './modules/blog/blog.module';
+import { HealthController } from './modules/blog/controllers/health.controller';
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { BlogModule } from './modules/blog/blog.module';
     FirebaseModule,
     BlogModule
   ],
-  controllers: [BlogController, CsrfController],
+  controllers: [BlogController, CsrfController, HealthController],
   providers: [
     {
       provide: APP_GUARD,
