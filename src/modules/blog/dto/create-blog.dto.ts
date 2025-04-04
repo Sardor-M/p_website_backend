@@ -1,4 +1,4 @@
-import { BlogPost } from '@/types';
+import { AuthorData, BlogPost, DataStructure } from '@/types';
 import {
   IsArray,
   IsNotEmpty,
@@ -19,45 +19,57 @@ export class CreateBlogDto {
   @IsNotEmpty()
   date: Date;
 
-  @IsNotEmpty()
-  @IsObject()
-  author: {
-    name: string;
-    avatar?: string;
-  };
-
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  readTime: string;
+  readTime?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
+  @IsString()
+  introduction?: string;
+
+  @IsOptional()
   @IsArray()
-  topics: string[];
+  dataStructures?: DataStructure[];
 
   @IsNotEmpty()
   @IsObject()
-  content: {
-    html: string;
-    blocks?: any[];
-    entityMap?: Record<string, any>;
-  };
+  metadata: AuthorData;
+
+  @IsOptional()
+  createdAt?: Date;
+
+  @IsOptional()
+  updatedAt?: Date;
 }
 
 // helper method to convert Firestore data to a BlogPost object
 export const convertFirestoreToBlogPost = (
-    id: string,
-    data: FirebaseFirestore.DocumentData
-  ): BlogPost => {
-    return {
-      id,
-      title: data.title,
-      subtitle: data.subtitle,
-      date: data.date ? data.date.toDate ? data.date.toDate() : new Date(data.date) : null,
-      author: data.author,
-      readTime: data.readTime,
-      topics: data.topics,
-      content: data.content,
-      createdAt: data.createdAt ? data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt) : null,
-      updatedAt: data.updatedAt ? data.updatedAt.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt) : null,
-    };
+  id: string,
+  data: FirebaseFirestore.DocumentData
+): BlogPost => {
+  const formatDate = (dateField: any) => {
+    if (!dateField) return '';
+    return dateField.toDate ? dateField.toDate().toISOString() : new Date(dateField).toISOString();
   };
+  
+  const metadata: AuthorData = {
+    author: {
+      name: data.author?.name || 'Unknown',
+      bio: data.author?.bio || ''
+    },
+    topics: data.topics || []
+  };
+  
+  return {
+    id,
+    title: data.title || '',
+    subtitle: data.subtitle || '',
+    date: formatDate(data.date),
+    readTime: data.readTime || '10 min read',
+    introduction: data.introduction || '',
+    dataStructures: data.dataStructures || [],
+    metadata: metadata,
+    createdAt: formatDate(data.createdAt),
+    updatedAt: formatDate(data.updatedAt),
+  };
+};

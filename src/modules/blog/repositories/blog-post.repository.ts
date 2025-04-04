@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { FirebaseService } from '../../../firebase/firebase.service';
+import { FirebaseService } from '@/firebase/firebase.service';
 import {    
   convertFirestoreToBlogPost 
 } from '../dto/create-blog.dto';
@@ -41,8 +41,9 @@ export class BlogPostRepository {
     const blogPostData = {
       ...createBlogPostDto,
       id,
-      createdAt: now,
-      updatedAt: now
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      date: now.toISOString()
     };
     
     await this.collection.doc(id).set(blogPostData);

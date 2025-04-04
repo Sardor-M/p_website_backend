@@ -16,6 +16,21 @@ async function bootstrap() {
     logger: ['error', 'warn', 'log'],
   });
 
+  // app.enableCors({
+  //   origin: ['http://localhost:5173'],
+  //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  //   credentials: true,
+  //   allowedHeaders: [
+  //     'Origin', 
+  //     'X-Requested-With', 
+  //     'Content-Type', 
+  //     'Accept', 
+  //     'Authorization', 
+  //     'X-CSRF-TOKEN', 
+  //     'CSRF-Token'
+  //   ],
+  // });
+
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -24,6 +39,7 @@ async function bootstrap() {
           scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:', 'https:'],
+          // connectSrc: ["'self'", 'https://portfolio-e80b2.web.app', 'http://localhost:5173'],
           connectSrc: ["'self'", 'https://portfolio-e80b2.web.app'],
           fontSrc: ["'self'", 'https:'],
           objectSrc: ["'none'"],
