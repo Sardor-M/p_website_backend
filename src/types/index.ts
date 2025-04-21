@@ -1,12 +1,12 @@
 export type BlogPost = {
-  id?: string; 
+  id?: string;
   title?: string;
   subtitle?: string;
   date?: string;
   readTime?: string;
   introduction?: string;
   dataStructures?: DataStructure[];
-  metadata:  AuthorData,
+  metadata: AuthorData;
   createdAt?: string;
   updatedAt?: string;
 };

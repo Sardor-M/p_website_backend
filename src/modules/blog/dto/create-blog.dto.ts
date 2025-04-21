@@ -45,21 +45,23 @@ export class CreateBlogDto {
 // helper method to convert Firestore data to a BlogPost object
 export const convertFirestoreToBlogPost = (
   id: string,
-  data: FirebaseFirestore.DocumentData
+  data: FirebaseFirestore.DocumentData,
 ): BlogPost => {
   const formatDate = (dateField: any) => {
     if (!dateField) return '';
-    return dateField.toDate ? dateField.toDate().toISOString() : new Date(dateField).toISOString();
+    return dateField.toDate
+      ? dateField.toDate().toISOString()
+      : new Date(dateField).toISOString();
   };
-  
+
   const metadata: AuthorData = {
     author: {
       name: data.author?.name || 'Unknown',
-      bio: data.author?.bio || ''
+      bio: data.author?.bio || '',
     },
-    topics: data.topics || []
+    topics: data.topics,
   };
-  
+
   return {
     id,
     title: data.title || '',
