@@ -56,10 +56,10 @@ export const convertFirestoreToBlogPost = (
 
   const metadata: AuthorData = {
     author: {
-      name: data.author?.name || 'Unknown',
-      bio: data.author?.bio || '',
+      name: data.metadata.author.name || data.author.name,
+      bio: data.metadata.author.bio || data.author.bio,
     },
-    topics: data.topics,
+    topics: data.metadata.topics || data.topics,
   };
 
   return {
