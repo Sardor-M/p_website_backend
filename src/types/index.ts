@@ -16,7 +16,7 @@ export type AuthorData = {
     name: string;
     bio?: string;
   };
-  topics: string[];
+  topic: string;
 };
 
 export type DataStructure = {

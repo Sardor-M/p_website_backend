@@ -59,7 +59,7 @@ export const convertFirestoreToBlogPost = (
       name: data.metadata.author.name || data.author.name,
       bio: data.metadata.author.bio || data.author.bio,
     },
-    topics: data.metadata.topics || data.topics,
+    topic: data.metadata.topic || data.topic,
   };
 
   return {
